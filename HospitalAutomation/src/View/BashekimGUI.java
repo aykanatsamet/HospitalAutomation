@@ -4,6 +4,7 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -15,12 +16,21 @@ import com.mysql.cj.x.protobuf.MysqlxCrud.ViewCheckOption;
 
 import Helper.Helper;
 import Model.Bashekim;
+import Model.Clinic;
 
 import java.awt.Color;
 import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+
 import java.awt.Font;
+import java.awt.Point;
+
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.sql.SQLException;
 import java.awt.event.ActionEvent;
 import javax.swing.JTabbedPane;
@@ -32,13 +42,23 @@ public class BashekimGUI extends JFrame {
 
 	private JPanel w_pane;
 	static Bashekim bashekim=new Bashekim();
+	Clinic clinic=new Clinic();
+	
 	private JTextField fld_newDoctor_name;
 	private JTextField fld_newDoctor_Tc;
 	private JTextField fld_newDoctor_pass;
 	private JTextField fld_deleteDoctor;
 	private JTable table_Doctor;
+	
 	private DefaultTableModel doctorModel=null;
 	private Object[] doctorData=null;
+	
+	private DefaultTableModel clinicModel=null;
+	private Object[] clinicData=null;
+	
+	private JTable table_clinic;
+	private JTextField fld_clinic;
+	private JPopupMenu clncPopupMenu;
 
 	/**
 	 * Launch the application.
@@ -61,6 +81,8 @@ public class BashekimGUI extends JFrame {
 	 * @throws SQLException 
 	 */
 	public BashekimGUI(Bashekim bashekim) throws SQLException {
+		
+		// Doctor Model
 		doctorModel=new DefaultTableModel();
 		Object[] colDoctorName=new Object[4];
 		colDoctorName[0]="ID";
@@ -77,6 +99,23 @@ public class BashekimGUI extends JFrame {
 			doctorData[3]=bashekim.getDoctorList().get(i).getPassword();
 			doctorModel.addRow(doctorData);
 		}
+		
+	   // Clinic Model
+		clinicModel=new DefaultTableModel();
+		Object[] colClinicName=new Object[2];
+		colClinicName[0]="ID";
+		colClinicName[1]="Poliklinik adı";
+		clinicModel.setColumnIdentifiers(colClinicName);
+		clinicData=new Object[2];
+		
+		for(int i=0;i<clinic.getList().size();i++) {
+			clinicData[0]=clinic.getList().get(i).getId();
+			clinicData[1]=clinic.getList().get(i).getName();
+			clinicModel.addRow(clinicData);
+		}
+		
+		
+		
 		
 		
 		setTitle("Hospital Automation");
@@ -208,6 +247,8 @@ public class BashekimGUI extends JFrame {
 		table_Doctor = new JTable(doctorModel);
 		w_scrollDoctor.setViewportView(table_Doctor);
 		
+	
+		
 		table_Doctor.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 			
 			@Override
@@ -237,6 +278,108 @@ public class BashekimGUI extends JFrame {
 				
 			}
 		});
+		
+		JPanel pnl_clinic_yonetimi = new JPanel();
+		tabbedPane_bashekim.addTab("Poliklinikler", null, pnl_clinic_yonetimi, null);
+		pnl_clinic_yonetimi.setLayout(null);
+		
+		JScrollPane scrollpane_clinic = new JScrollPane();
+		scrollpane_clinic.setBounds(6, 6, 172, 253);
+		pnl_clinic_yonetimi.add(scrollpane_clinic);
+		
+		
+		clncPopupMenu=new JPopupMenu();
+		JMenuItem updateMenu=new JMenuItem("Güncelle");
+		JMenuItem deleteMenu=new JMenuItem("Sil");
+		clncPopupMenu.add(updateMenu);
+		clncPopupMenu.add(deleteMenu);
+		
+		updateMenu.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				 int selID=Integer.parseInt(table_clinic.getValueAt(table_clinic.getSelectedRow(),0).toString());
+				 Clinic selClinic=clinic.getFetch(selID);
+				 UpdateClinicGUI updateClinicGUI=new UpdateClinicGUI(selClinic);
+				 updateClinicGUI.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				 updateClinicGUI.setVisible(true);
+				 updateClinicGUI.addWindowListener(new WindowAdapter() {
+					 
+					 @Override
+					public void windowClosed(WindowEvent e) {
+		             UpdateClinicModel();
+					}
+				});
+			}
+		});
+		
+		deleteMenu.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(Helper.confirm("sure")) {
+			   int selID=Integer.parseInt(table_clinic.getValueAt(table_clinic.getSelectedRow(),0).toString());
+			   if(clinic.delClinic(selID)) {
+				   Helper.showMsg("success");
+				   UpdateClinicModel();
+			   }
+			   else {
+				   Helper.showMsg("error");
+			   }
+
+				}
+				
+			}
+		});
+		
+		
+		table_clinic = new JTable(clinicModel);
+		table_clinic.setComponentPopupMenu(clncPopupMenu);
+		table_clinic.addMouseListener(new MouseAdapter() {
+			
+			@Override
+			public void mousePressed(MouseEvent e) {
+				Point point=e.getPoint();
+				int selectedRow=table_clinic.rowAtPoint(point);
+				table_clinic.setRowSelectionInterval(selectedRow, selectedRow);
+		 	
+			}
+		});
+		
+		scrollpane_clinic.setViewportView(table_clinic);
+		
+		fld_clinic = new JTextField();
+		fld_clinic.setColumns(10);
+		fld_clinic.setBounds(181, 35, 117, 26);
+		pnl_clinic_yonetimi.add(fld_clinic);
+		
+		JLabel lbl_clinic = new JLabel("Poliklinik adı");
+		lbl_clinic.setFont(new Font("Dialog", Font.BOLD, 13));
+		lbl_clinic.setBounds(192, 18, 100, 16);
+		pnl_clinic_yonetimi.add(lbl_clinic);
+		
+		JButton btn_addClinic = new JButton("Ekle");
+		btn_addClinic.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(fld_clinic.getText().length()==0) {
+					Helper.showMsg("fill");
+				}
+				else {
+					if(clinic.addClinic(fld_clinic.getText())) {
+						Helper.showMsg("success");
+						fld_clinic.setText(null);
+						UpdateClinicModel();
+						
+					}
+				}
+			}
+		});
+		btn_addClinic.setBounds(191, 61, 100, 26);
+		pnl_clinic_yonetimi.add(btn_addClinic);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(307, 6, 154, 253);
+		pnl_clinic_yonetimi.add(scrollPane);
 		 
 	}
 	
@@ -254,4 +397,17 @@ public class BashekimGUI extends JFrame {
 				
 		
 	}
+	public void UpdateClinicModel() {
+		DefaultTableModel clearModel= (DefaultTableModel) table_clinic.getModel();
+		clearModel.setRowCount(0);
+		for(int i=0;i<clinic.getList().size();i++) {
+			clinicData[0]=clinic.getList().get(i).getId();
+			clinicData[1]=clinic.getList().get(i).getName();
+			clinicModel.addRow(clinicData);
+		}
+	
+	}
+	
+	
+	
 }
