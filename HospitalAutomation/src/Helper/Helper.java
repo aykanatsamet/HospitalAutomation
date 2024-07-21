@@ -30,6 +30,7 @@ public class Helper {
 		    break;
 		case "error":
 			msg="İşlem Başarısız Gerçekleşti.";
+			break;
 		default:
 			msg=str;
 		}

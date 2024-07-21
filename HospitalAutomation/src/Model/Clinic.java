@@ -67,6 +67,8 @@ public ArrayList<Clinic> getList() {
 	  return list;
 	}
 
+
+
 public boolean addClinic(String name) {
 
 	boolean add=false;
@@ -150,6 +152,25 @@ public Clinic getFetch(int id) {
 	
 	return c;
 	
+}
+
+public ArrayList<User> getClinicDoctorList(int clinicID) {
+	
+	ArrayList<User> list=new ArrayList<>();
+    User obj;
+	try {
+		Connection c=connection.connDB();
+		st=c.createStatement();
+		rs=st.executeQuery("SELECT u.id,u.tc_no,u.type,u.name,u.password FROM worker w LEFT JOIN user u ON user_id=u.id WHERE clinic_id="+clinicID);
+		while(rs.next()) {
+			obj=new User(rs.getInt("u.id"),rs.getString("u.name"),rs.getString("u.tc_no"),rs.getString("u.password"),rs.getString("u.type"));
+			list.add(obj);
+		}
+	} catch (SQLException e) {
+		e.printStackTrace();
+	} 
+	
+  return list;
 }
 
 

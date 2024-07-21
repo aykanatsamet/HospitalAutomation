@@ -15,6 +15,7 @@ import javax.swing.table.DefaultTableModel;
 import com.mysql.cj.x.protobuf.MysqlxCrud.ViewCheckOption;
 
 import Helper.Helper;
+import Helper.Item;
 import Model.Bashekim;
 import Model.Clinic;
 
@@ -27,6 +28,7 @@ import java.awt.Point;
 
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
@@ -37,6 +39,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JComboBox;
 
 public class BashekimGUI extends JFrame {
 
@@ -59,6 +62,7 @@ public class BashekimGUI extends JFrame {
 	private JTable table_clinic;
 	private JTextField fld_clinic;
 	private JPopupMenu clncPopupMenu;
+	private JTable table_worker;
 
 	/**
 	 * Launch the application.
@@ -114,8 +118,13 @@ public class BashekimGUI extends JFrame {
 			clinicModel.addRow(clinicData);
 		}
 		
-		
-		
+		//Worker Model
+		DefaultTableModel workerModel=new DefaultTableModel();
+		Object[] colWorker=new Object[2];
+		colWorker[0]="ID";
+		colWorker[1]="Ad Soyad";
+		workerModel.setColumnIdentifiers(colWorker);
+		Object[] workerData=new Object[2];
 		
 		
 		setTitle("Hospital Automation");
@@ -137,6 +146,9 @@ public class BashekimGUI extends JFrame {
 		JButton doctor_logOut = new JButton("Çıkış Yap");
 		doctor_logOut.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				LoginGUI loginGUI=new LoginGUI();
+				loginGUI.setVisible(true);
+				dispose(); 	
 			}
 		});
 		doctor_logOut.setBounds(365, 17, 117, 29);
@@ -342,7 +354,7 @@ public class BashekimGUI extends JFrame {
 				Point point=e.getPoint();
 				int selectedRow=table_clinic.rowAtPoint(point);
 				table_clinic.setRowSelectionInterval(selectedRow, selectedRow);
-		 	
+			
 			}
 		});
 		
@@ -350,12 +362,12 @@ public class BashekimGUI extends JFrame {
 		
 		fld_clinic = new JTextField();
 		fld_clinic.setColumns(10);
-		fld_clinic.setBounds(181, 35, 117, 26);
+		fld_clinic.setBounds(179, 34, 117, 26);
 		pnl_clinic_yonetimi.add(fld_clinic);
 		
 		JLabel lbl_clinic = new JLabel("Poliklinik adı");
 		lbl_clinic.setFont(new Font("Dialog", Font.BOLD, 13));
-		lbl_clinic.setBounds(192, 18, 100, 16);
+		lbl_clinic.setBounds(190, 17, 100, 16);
 		pnl_clinic_yonetimi.add(lbl_clinic);
 		
 		JButton btn_addClinic = new JButton("Ekle");
@@ -374,16 +386,91 @@ public class BashekimGUI extends JFrame {
 				}
 			}
 		});
-		btn_addClinic.setBounds(191, 61, 100, 26);
+		btn_addClinic.setBounds(189, 61, 100, 26);
 		pnl_clinic_yonetimi.add(btn_addClinic);
 		
-		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(307, 6, 154, 253);
-		pnl_clinic_yonetimi.add(scrollPane);
+		JScrollPane w_scrollWorker = new JScrollPane();
+		w_scrollWorker.setBounds(307, 6, 154, 253);
+		pnl_clinic_yonetimi.add(w_scrollWorker);
+		
+		table_worker = new JTable();
+		w_scrollWorker.setViewportView(table_worker);
+		
+		JComboBox select_Doctor = new JComboBox();
+		select_Doctor.setBounds(190, 189, 106, 27);
+		for(int i=0;i<bashekim.getDoctorList().size();i++) {
+			select_Doctor.addItem(new Item(bashekim.getDoctorList().get(i).getId(),bashekim.getDoctorList().get(i).getName()));
+		}
+		pnl_clinic_yonetimi.add(select_Doctor);
+		
+		
+		JButton btn_addWorker = new JButton("Ekle");
+		btn_addWorker.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int selRow=table_clinic.getSelectedRow();
+				if(selRow>=0) {
+					String selClinic=table_clinic.getModel().getValueAt(selRow, 0).toString();
+					int selClinicID=Integer.parseInt(selClinic);
+					Item doctorItem=(Item) select_Doctor.getSelectedItem();
+					boolean control=bashekim.addWorker(doctorItem.getKey(), selClinicID);
+					if(control) {
+						Helper.showMsg("İşlem başarılı.");
+						DefaultTableModel clearModel=(DefaultTableModel) table_worker.getModel();
+						clearModel.setRowCount(0);
+						
+						for(int i=0;i<bashekim.getClinicDoctorList(selClinicID).size();i++) {
+							workerData[0]=bashekim.getClinicDoctorList(selClinicID).get(i).getId();
+							workerData[1]=bashekim.getClinicDoctorList(selClinicID).get(i).getName();
+							workerModel.addRow(workerData);
+						}
+						table_worker.setModel(workerModel);
+					}
+					else {
+						Helper.showMsg("Error.");
+					}
+				}else {
+					Helper.showMsg("Lütfen bir poliklinik seçiniz.");
+				}
+				
+			}
+		});
+		btn_addWorker.setBounds(190, 216, 100, 26);
+		pnl_clinic_yonetimi.add(btn_addWorker);
+		
+		JLabel lbl_clinic_1 = new JLabel("Poliklinik adı");
+		lbl_clinic_1.setFont(new Font("Dialog", Font.BOLD, 13));
+		lbl_clinic_1.setBounds(190, 107, 100, 16);
+		pnl_clinic_yonetimi.add(lbl_clinic_1);
+		
+		JButton btn_worker_select = new JButton("Seç");
+		btn_worker_select.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int selRow=table_clinic.getSelectedRow();
+				if(selRow>=0) {
+					
+					String selClinic=table_clinic.getModel().getValueAt(selRow, 0).toString();
+					int selClinicID=Integer.parseInt(selClinic);
+					DefaultTableModel clearModel=(DefaultTableModel) table_worker.getModel();
+					clearModel.setRowCount(0);
+					
+					for(int i=0;i<bashekim.getClinicDoctorList(selClinicID).size();i++) {
+						workerData[0]=bashekim.getClinicDoctorList(selClinicID).get(i).getId();
+						workerData[1]=bashekim.getClinicDoctorList(selClinicID).get(i).getName();
+						workerModel.addRow(workerData);
+					}
+					
+					table_worker.setModel(workerModel);
+				}else {
+					Helper.showMsg("Lütfen bir poliklinik seçiniz.");
+				}
+			}
+		});
+		btn_worker_select.setBounds(190, 125, 100, 26);
+		pnl_clinic_yonetimi.add(btn_worker_select);
 		 
 	}
 	
-	public void UpdateDoctorModel() {
+	public void UpdateDoctorModel(){
 		DefaultTableModel clearModel= (DefaultTableModel) table_Doctor.getModel();
 		clearModel.setRowCount(0);
 		for(int i=0;i<bashekim.getDoctorList().size();i++) {
@@ -407,7 +494,4 @@ public class BashekimGUI extends JFrame {
 		}
 	
 	}
-	
-	
-	
 }

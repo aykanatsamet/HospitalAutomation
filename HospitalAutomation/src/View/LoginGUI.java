@@ -22,6 +22,8 @@ import javax.swing.JPasswordField;
 import Helper.DBConnection;
 import Helper.Helper;
 import Model.Bashekim;
+import Model.Doctor;
+import Model.Hasta;
 
 public class LoginGUI extends JFrame {
 
@@ -102,12 +104,64 @@ public class LoginGUI extends JFrame {
 		fld_hasta_Tc.setColumns(10);
 		
 		JButton btn_hasta_Login = new JButton("Giriş Yap");
-		btn_hasta_Login.setBounds(110, 95, 154, 37);
+		btn_hasta_Login.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if(fld_hasta_Tc.getText().length()==0|| fld_hasta_pass.getText().length()==0) {
+					Helper.showMsg("fill");
+				}
+				else {
+					boolean key=true;
+					try {
+						Connection c=conn.connDB();
+						Statement st=c.createStatement();
+						ResultSet rs=st.executeQuery("SELECT * FROM user"); 
+						
+					while(rs.next()) {
+						if(fld_hasta_Tc.getText().equals(rs.getString("tc_no"))&&fld_hasta_pass.getText().equals(rs.getString("password"))) {
+	            			
+							  if(rs.getString("type").equals("hasta")) {
+	    					    Hasta hasta=new Hasta();
+	    						hasta.setId(rs.getInt("id"));
+	    						hasta.setName(rs.getString("name"));
+	    						hasta.setPassword(rs.getString("password"));
+	    						hasta.setTc_no(rs.getString("tc_no"));
+	    						hasta.setType(rs.getString("type"));
+	    						HastaGUI hastaGUI=new HastaGUI(hasta);
+	    						hastaGUI.setVisible(true);
+	    						dispose();
+	    						key=false;
+							  }
+						}
+					}
+					
+					} catch (SQLException e1) {
+		
+						e1.printStackTrace();
+					}
+					if(key) {
+						Helper.showMsg("Hasta bulunamadı, kayıt olunuz");
+					}
+					
+				}
+			}
+		});
+		btn_hasta_Login.setBounds(185, 86, 154, 37);
 		panel.add(btn_hasta_Login);
 		
 		fld_hasta_pass = new JPasswordField();
 		fld_hasta_pass.setBounds(159, 53, 130, 26);
 		panel.add(fld_hasta_pass);
+		
+		JButton btn_register = new JButton("Kayıt ol");
+		btn_register.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				RegisterGUI registerGUI=new RegisterGUI();
+				registerGUI.setVisible(true);
+				dispose();
+			}
+		});
+		btn_register.setBounds(6, 107, 130, 26);
+		panel.add(btn_register);
 		
 		JPanel panel_1 = new JPanel();
 		tabbedPane.addTab("Doktor Girişi", null, panel_1, null);
@@ -142,19 +196,35 @@ public class LoginGUI extends JFrame {
 				 try {
 					Connection c=conn.connDB();
 					Statement st=c.createStatement();
-					ResultSet rs=st.executeQuery("SELECT * FROM user");
+					ResultSet rs=st.executeQuery("SELECT * FROM user"); 
 				while(rs.next()) {
 					if(fld_Doctor_Tc.getText().equals(rs.getString("tc_no"))&&fld_Doctor_pass.getText().equals(rs.getString("password"))) {
+            			if(rs.getString("type").equals("başhekim")) {
+
+    						Bashekim bashekim=new Bashekim();
+    						bashekim.setId(rs.getInt("id"));
+    						bashekim.setName(rs.getString("name"));
+    						bashekim.setPassword(rs.getString("password"));
+    						bashekim.setTc_no(rs.getString("tc_no"));
+    						bashekim.setType(rs.getString("type"));
+    						BashekimGUI bashekimGUI=new BashekimGUI(bashekim);
+    						bashekimGUI.setVisible(true);
+    						dispose();
+            			}
+            			
+            			if(rs.getString("type").equals("doktor")) {
+            				Doctor doctor =new Doctor();
+            				doctor.setId(rs.getInt("id"));
+    						doctor.setName(rs.getString("name"));
+    						doctor.setPassword(rs.getString("password"));
+    						doctor.setTc_no(rs.getString("tc_no"));
+    						doctor.setType(rs.getString("type"));
+    						DoctorGUI doctorGUI=new DoctorGUI(doctor);
+    						doctorGUI.setVisible(true);
+    						dispose();
+            				
+            			}
 						
-						Bashekim bashekim=new Bashekim();
-						bashekim.setId(rs.getInt("id"));
-						bashekim.setName(rs.getString("name"));
-						bashekim.setPassword(rs.getString("password"));
-						bashekim.setTc_no(rs.getString("tc_no"));
-						bashekim.setType(rs.getString("type"));
-						BashekimGUI bashekimGUI=new BashekimGUI(bashekim);
-						bashekimGUI.setVisible(true);
-						dispose();
 					}
 				}
 				
